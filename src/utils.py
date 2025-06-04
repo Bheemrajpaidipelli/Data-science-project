@@ -2,8 +2,9 @@ import os
 import sys
 import dill
 import logging
-from src.exception import CustomException
 from sklearn.metrics import r2_score
+from sklearn.model_selection import GridSearchCV
+from src.exception import CustomException
 
 def save_object(file_path, obj):
     """
@@ -20,25 +21,45 @@ def save_object(file_path, obj):
     except Exception as e:
         raise CustomException(e, sys)
 
-def evaluate_models(x_train, y_train, x_test, y_test, models):
+
+def evaluate_models(x_train, y_train, x_test, y_test, models, params):
     """
-    Trains multiple models and returns a report dictionary with R² scores.
+    Trains and tunes multiple models using GridSearchCV.
+    Returns:
+        - report: dict with model names and test R² scores
+        - trained_models: dict with model names and fitted model objects
     """
     try:
         report = {}
+        trained_models = {}
+
         for name, model in models.items():
-            model.fit(x_train, y_train)
+            logging.info(f"Training and tuning model: {name}")
 
-            y_train_pred = model.predict(x_train)
-            y_test_pred = model.predict(x_test)
+            # Get hyperparameter grid for this model
+            model_param_grid = params.get(name, {})
 
+            # Perform grid search
+            gs = GridSearchCV(model, model_param_grid, cv=3, n_jobs=-1, verbose=1)
+            gs.fit(x_train, y_train)
+
+            # Use best estimator from grid search
+            best_model = gs.best_estimator_
+
+            # Predict using best model
+            y_train_pred = best_model.predict(x_train)
+            y_test_pred = best_model.predict(x_test)
+
+            # Compute R² scores
             train_model_score = r2_score(y_train, y_train_pred)
-            test_model_score = r2_score(y_test, y_test_pred)  
+            test_model_score = r2_score(y_test, y_test_pred)
 
             logging.info(f"{name} - Train R²: {train_model_score:.4f}, Test R²: {test_model_score:.4f}")
-            report[name] = test_model_score
 
-        return report
+            report[name] = test_model_score
+            trained_models[name] = best_model
+
+        return report, trained_models
 
     except Exception as e:
         raise CustomException(e, sys)

@@ -1,6 +1,7 @@
 import os
 import sys
 from dataclasses import dataclass
+
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.tree import DecisionTreeRegressor
@@ -10,9 +11,10 @@ from sklearn.metrics import r2_score
 
 from src.exception import CustomException
 from src.logger import logging
-from src.utils import save_object, evaluate_models  # Make sure this is correct
+from src.utils import save_object, evaluate_models
 
-@dataclass 
+
+@dataclass
 class ModelTrainerConfig:
     trained_model_file_path: str = os.path.abspath(os.path.join("artifacts", "model.pkl"))
 
@@ -23,7 +25,7 @@ class ModelTrainer:
 
     def initiate_model_trainner(self, train_array, test_array):
         try:
-            logging.info("Importing train and test array from transformation")
+            logging.info("Splitting training and testing data arrays.")
 
             x_train, y_train, x_test, y_test = (
                 train_array[:, :-1],
@@ -34,7 +36,6 @@ class ModelTrainer:
 
             models = {
                 'Linear Regression': LinearRegression(),
-                'Lasso': Lasso(),
                 'K-Neighbors Regressor': KNeighborsRegressor(),
                 'Decision Tree': DecisionTreeRegressor(),
                 'Random Forest Regressor': RandomForestRegressor(),
@@ -43,37 +44,71 @@ class ModelTrainer:
                 'AdaBoost Regressor': AdaBoostRegressor()
             }
 
-            logging.info("Evaluating models...")
-            model_report: dict = evaluate_models(x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, models=models)
+            params = {
+                "Linear Regression": {},
 
-            print(" model_report:", model_report)
+                "K-Neighbors Regressor": {
+                    'n_neighbors': [3, 4, 5, 6, 7, 8, 9, 10],
+                    'weights': ['uniform', 'distance'],
+                    'algorithm': ['ball_tree', 'kd_tree', 'brute'],
+                    'metric': ['minkowski', 'manhattan', 'euclidean', 'chebyshev']
+                },
+
+                "Decision Tree": {
+                    'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson']
+                },
+
+                "Random Forest Regressor": {
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                },
+
+                "Gradient Boosting Regressor": {
+                    'learning_rate': [0.1, 0.01, 0.05, 0.001],
+                    'subsample': [0.6, 0.7, 0.75, 0.8, 0.85, 0.9],
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                },
+
+                "XGB Regressor": {
+                    'learning_rate': [0.1, 0.01, 0.05, 0.001],
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                },
+
+                "AdaBoost Regressor": {
+                    'learning_rate': [0.1, 0.01, 0.5, 0.001],
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                }
+            }
+
+            logging.info("Evaluating models using GridSearchCV...")
+            model_report, trained_models = evaluate_models(
+                x_train=x_train,
+                y_train=y_train,
+                x_test=x_test,
+                y_test=y_test,
+                models=models,
+                params=params
+            )
 
             if not model_report:
                 raise CustomException("Model report is empty — evaluation failed.", sys)
 
             best_model_score = max(model_report.values())
             best_model_name = list(model_report.keys())[list(model_report.values()).index(best_model_score)]
-            best_model = models[best_model_name]
+            best_model = trained_models[best_model_name]
 
-            print(f" Best model: {best_model_name} with R2 score: {best_model_score}")
-            logging.info(f"Best model selected: {best_model_name} with R2: {best_model_score}")
-
-            # Skipping performance threshold temporarily
-            # if best_model_score < 0.6:
-            #     raise CustomException("No suitable model found")
+            logging.info(f"Best model selected: {best_model_name} with R² score: {best_model_score:.4f}")
 
             save_object(
                 file_path=self.model_trainer_config.trained_model_file_path,
                 obj=best_model
             )
 
-            print(f" Model saved to: {self.model_trainer_config.trained_model_file_path}")
-            logging.info("Model saved successfully.")
+            logging.info(f"Model saved to {self.model_trainer_config.trained_model_file_path}")
 
             predicted = best_model.predict(x_test)
             r2_square = r2_score(y_test, predicted)
+            logging.info(f"Final R² score on test set: {r2_square:.4f}")
 
-            print(f" Final R2 Score on Test Set: {r2_square}")
             return r2_square
 
         except Exception as e:

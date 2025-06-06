@@ -28,7 +28,7 @@ Developed a complete end-to-end Data Science project, encompassing data collecti
 
 12) Sample Output
 
-13 Contributers
+13) Contributers
 
 # Project Title
 Project Title: **Student Exam Performance Indicator**

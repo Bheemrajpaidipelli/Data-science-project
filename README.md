@@ -56,28 +56,48 @@ Writing  Score (Target Variable)
 
 # Project Structure
 """Student-Performance-Predictor/
+
 │
 ├── artifacts/# Saved model and preprocessor files
+
 │   ├── model.pkl
+
 │   └── preprocessor.pkl
+
 │
 ├── templates/     # HTML templates for Flask app
+
 │   ├── index.html
+
 │   └── home.html
+
 │
-├── src/                   Source code
+├── src/                #Source code
+
 │   ├── components/
+
 │   │   ├── data_ingestion.py
+
 │   │   ├── data_transformation.py
+
 │   │   └── model_trainer.py
+
 │   ├── pipeline/
+
 │   │   └── predict_pipeline.py
+
 │   ├── exception.py
+
 │   ├── logger.py
+
 │   └── utils.py
+
 │
+
 ├── app.py        # Flask application entry point
+
 ├── requirements.txt      # Python dependencies
+
 └── README.md          # Project documentation"""
 
 

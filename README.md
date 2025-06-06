@@ -55,7 +55,7 @@ Reading and Math Scores
 Writing  Score (Target Variable)
 
 # Project Structure
-'''Student-Performance-Predictor/
+"""Student-Performance-Predictor/
 │
 ├── artifacts/# Saved model and preprocessor files
 │   ├── model.pkl
@@ -78,7 +78,7 @@ Writing  Score (Target Variable)
 │
 ├── app.py        # Flask application entry point
 ├── requirements.txt      # Python dependencies
-└── README.md          # Project documentation'''
+└── README.md          # Project documentation"""
 
 
 # Features
